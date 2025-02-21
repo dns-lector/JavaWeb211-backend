@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,6 +64,7 @@ public class UserDao {
             }
             prep.setString( param, user.getUserId().toString() );
             prep.execute();
+            dbService.getConnection().commit();
             return true;
         }
         catch( SQLException ex ) {
@@ -121,7 +125,6 @@ public class UserDao {
             prep.setString( 2, user.getName()  );
             prep.setString( 3, user.getEmail() );
             prep.setString( 4, user.getPhone() );
-            this.connection.setAutoCommit( false );        
             prep.executeUpdate() ;
         }
         catch( SQLException ex ) {
@@ -173,18 +176,73 @@ public class UserDao {
         return null;
     }
     
+    public CompletableFuture deleteAsync( User user ) {
+        String sql = String.format(
+                "UPDATE users SET delete_moment = CURRENT_TIMESTAMP,"
+                + " name = '', email = NULL, phone = NULL WHERE user_id = '%s'",
+                user.getUserId().toString() ) ;
+        
+        String sql2 = String.format(
+                "UPDATE users_access SET ua_delete_dt = CURRENT_TIMESTAMP,"
+                + " login = UUID() WHERE user_id = '%s'",
+                user.getUserId().toString() ) ;
+        
+        CompletableFuture task1 = CompletableFuture.runAsync( () -> {
+            try( Statement stmt = dbService.getConnection().createStatement() ) {
+                stmt.executeUpdate( sql );
+            }        
+            catch( SQLException ex ) {
+                logger.log( Level.WARNING, "UserDao::delete1 {0}", ex.getMessage() );
+                try { dbService.getConnection().rollback();}
+                catch( SQLException ignore ) { }
+            }
+        } );
+        
+        CompletableFuture task2 = CompletableFuture.runAsync( () -> {
+            try( Statement stmt = dbService.getConnection().createStatement() ) {
+                stmt.executeUpdate( sql2 );
+            }        
+            catch( SQLException ex ) {
+                logger.log( Level.WARNING, "UserDao::delete2 {0}", ex.getMessage() );
+                try { dbService.getConnection().rollback();}
+                catch( SQLException ignore ) { }
+            }
+        } );
+        return CompletableFuture
+                .allOf( task1, task2 )
+                .thenRun( () -> {
+                    try { dbService.getConnection().commit() ; }
+                    catch( SQLException ignore ) { }
+                });
+    }
+    
     public boolean installTables() {
-        return installUsersAccess() && intallUsers();
+        Future<Boolean> task1 = CompletableFuture
+                .supplyAsync( this::installUsersAccess ) ;
+        
+        Future<Boolean> task2 = CompletableFuture
+                .supplyAsync( this::intallUsers ) ;
+        try {
+            boolean res1 = task1.get() ;   // await task1
+            boolean res2 = task2.get() ;   // await task2
+            try { dbService.getConnection().commit() ; } catch( SQLException ignore ) { }
+            return res1 && res2;
+            // XX return await supplyAsync(1) && await supplyAsync(2)
+        }
+        catch( ExecutionException | InterruptedException ignore ) {
+            return false;
+        }
     }
     
     private boolean installUsersAccess() {
         String sql = "CREATE TABLE IF NOT EXISTS users_access("
                 + "user_access_id  CHAR(36)     PRIMARY KEY DEFAULT( UUID() ),"
-                + "user_id  CHAR(36)     NOT NULL,"
-                + "role_id  VARCHAR(16)  NOT NULL,"
-                + "login    VARCHAR(128) NOT NULL,"
-                + "salt     CHAR(16)     NOT NULL,"
-                + "dk       CHAR(20)     NOT NULL,"
+                + "user_id         CHAR(36)     NOT NULL,"
+                + "role_id         VARCHAR(16)  NOT NULL,"
+                + "login           VARCHAR(128) NOT NULL,"
+                + "salt            CHAR(16)     NOT NULL,"
+                + "dk              CHAR(20)     NOT NULL,"
+                + "ua_delete_dt    DATETIME         NULL,"
                 + "UNIQUE(login)"
                 + ") Engine = InnoDB, DEFAULT CHARSET = utf8mb4";
         try( Statement statement = connection.createStatement() ) {
@@ -201,10 +259,11 @@ public class UserDao {
     
     private boolean intallUsers() {
         String sql = "CREATE TABLE IF NOT EXISTS users("
-                + "user_id CHAR(36)    PRIMARY KEY DEFAULT( UUID() ),"
-                + "name    VARCHAR(128) NOT NULL,"
-                + "email   VARCHAR(256)     NULL,"
-                + "phone   VARCHAR(32)      NULL"
+                + "user_id       CHAR(36)    PRIMARY KEY DEFAULT( UUID() ),"
+                + "name          VARCHAR(128) NOT NULL,"
+                + "email         VARCHAR(256)     NULL,"
+                + "phone         VARCHAR(32)      NULL,"
+                + "delete_moment DATETIME         NULL"
                 + ") Engine = InnoDB, DEFAULT CHARSET = utf8mb4";
         try( Statement statement = connection.createStatement() ) {
             statement.executeUpdate( sql ) ;

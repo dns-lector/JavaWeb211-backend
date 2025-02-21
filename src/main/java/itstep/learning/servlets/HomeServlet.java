@@ -64,9 +64,11 @@ public class HomeServlet extends HttpServlet {
         catch( SQLException ex ) {
             message = ex.getMessage();
         }
-        String msg = dataContext.getUserDao().installTables()
-                ? "Install OK"
-                : "Install Fail";
+        String msg = 
+                dataContext.getUserDao().installTables()
+                && dataContext.getAccessTokenDao().installTables()
+                    ? "Install OK"
+                    : "Install Fail";
         
         restService.sendResponse( resp, 
                 new RestResponse()
@@ -187,4 +189,41 @@ App -> Tomcat -> Run
 
 Guice - Бібліотека для IoC від Google
 Spring
+*/
+
+/*
+Асинхронне виконання коду
+Синхронне - послідовне (у часі)
+   ++++++++----------*********
+Асинхронність - будь-яке відхилення від синхронності
+   ++++++++
+   ---------     Паралельне виконання
+   *********
+
+   +++++++---------    Ниткового типу
+   *********
+
+   +  +
+    -  -         Паралельне з перемиканням
+     *  *
+
+Способи реалізації асинхронності:
+ - Багатозадачність - засоби мови програмування (Task, Future, Promise)
+ - Багатопоточність - засоби операційної системи (за наявності)
+ - Багатопроцесність - засоби операційної системи
+ - Мережні (grid, network) технології
+
+async fun(){...}
+res = await fun(); X
+
+task = fun();
+task2 = fun2();
+other work
+res = await task;  !
+res2 = await task2;  !
+
+
+res = await fun().then(...).then(...); ?
+fun().then(...).then(...).then( res => ... ); !   Нитка (Continuations)
+fun2().then(.2.).then(.2.).then( res2 => ... )
 */

@@ -15,16 +15,22 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Singleton
 public class UserServlet extends HttpServlet {
     private final DataContext dataContext;
     private final RestService restService;
+    private final Logger logger;
 
     @Inject
-    public UserServlet(itstep.learning.rest.RestService restService, itstep.learning.dal.dao.DataContext dataContext) {
+    public UserServlet( RestService restService, DataContext dataContext, Logger logger ) {
         this.restService = restService;
         this.dataContext = dataContext;
+        this.logger = logger;
     }
 
     @Override
@@ -96,10 +102,43 @@ public class UserServlet extends HttpServlet {
                         "update", "PUT /user",
                         "delete", "DELETE /user"
                 ) );
-        
+        String userId = req.getParameter( "id" ) ;   //  /user?id=...
+        if( userId == null ) {
+            restService.sendResponse( resp, restResponse
+                .setStatus( 400 )
+                .setData( "Missing required ID" )
+            );
+            return ;
+        }
+        UUID userUuid;
+        try { userUuid = UUID.fromString( userId ) ; }
+        catch( Exception ignore ) { 
+            restService.sendResponse( resp, restResponse
+                .setStatus( 400 )
+                .setData( "Invalid ID format" )
+            );
+            return ;
+        }
+        User user = dataContext.getUserDao().getUserById( userUuid );
+        if( user == null ) {
+            restService.sendResponse( resp, restResponse
+                .setStatus( 401 )
+                .setData( "Unauthorized" )
+            );
+            return ;
+        }
+        try { dataContext.getUserDao().deleteAsync(user).get(); }
+        catch( InterruptedException | ExecutionException ex ) {
+            logger.log( Level.SEVERE, "deleteAsync fail: {0}", ex.getMessage() );
+            restService.sendResponse( resp, restResponse
+                .setStatus( 500 )
+                .setData( "Server error. See server's logs" )
+            );
+            return ;
+        }
         restResponse
                 .setStatus( 202 )
-                .setData( "Comming soon" )
+                .setData( "Deleted" )
                 .setCacheTime( 0 );
         restService.sendResponse( resp, restResponse );
     }
