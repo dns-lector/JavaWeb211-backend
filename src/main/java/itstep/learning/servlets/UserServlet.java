@@ -3,8 +3,10 @@ package itstep.learning.servlets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dao.DataContext;
+import itstep.learning.dal.dto.AccessToken;
 import itstep.learning.dal.dto.User;
-import itstep.learning.models.UserSignupFormModel;
+import itstep.learning.dal.dto.UserAccess;
+import itstep.learning.models.UserAuthViewModel;
 import itstep.learning.rest.RestResponse;
 import itstep.learning.rest.RestService;
 import jakarta.servlet.ServletException;
@@ -12,7 +14,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
@@ -77,17 +78,20 @@ public class UserServlet extends HttpServlet {
                             .setData( "Format error splitting by ':' " ) );
             return;
         }
-        User user = dataContext.getUserDao().authorize( parts[0], parts[1] ) ;
-        if( user == null ) {
+        UserAccess userAccess = dataContext.getUserDao().authorize( parts[0], parts[1] ) ;
+        if( userAccess == null ) {
             restService.sendResponse( resp, 
                     restResponse.setStatus( 401 )
                             .setData( "Credentials rejected" ) );
             return;
         }
+        // Створюємо токен для користувача
+        AccessToken token = dataContext.getAccessTokenDao().create( userAccess ) ;
+        User user =  dataContext.getUserDao().getUserById( userAccess.getUserId() );
         
         restResponse
                 .setStatus( 200 )
-                .setData( user )
+                .setData( new UserAuthViewModel( user, userAccess, token ) )
                 .setCacheTime( 600 );
         restService.sendResponse( resp, restResponse );
     }

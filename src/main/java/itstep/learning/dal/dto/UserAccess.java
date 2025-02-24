@@ -1,5 +1,7 @@
 package itstep.learning.dal.dto;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.UUID;
 
@@ -11,6 +13,20 @@ public class UserAccess {
     private String dk;
     private String roleId;
     private java.util.Date deleteMoment;
+    
+    public static UserAccess fromResultSet( ResultSet rs ) throws SQLException {
+        UserAccess ua = new UserAccess();
+        ua.setUserAccessId( UUID.fromString( rs.getString( "user_access_id" ) ) );
+        ua.setUserId( UUID.fromString( rs.getString( "user_id" ) ) );
+        ua.setLogin( rs.getString( "login" ) );
+        ua.setSalt( rs.getString( "salt" ) );
+        ua.setDk( rs.getString( "dk" ) );
+        ua.setRoleId( rs.getString( "role_id" ) );
+        java.sql.Timestamp timestamp = rs.getTimestamp( "ua_delete_dt" ) ;
+        ua.setDeleteMoment( 
+                timestamp == null ? null : new Date( timestamp.getTime() ) ) ;
+        return ua;
+    }
 
     public Date getDeleteMoment() {
         return deleteMoment;

@@ -14,6 +14,7 @@ itstep\learning\ioc\ServletConfig.class
 itstep\learning\dal\dao\AccessTokenDao.class
 itstep\learning\dal\dto\UserAccess.class
 itstep\learning\JakartaRestConfiguration.class
+itstep\learning\models\UserAuthViewModel.class
 itstep\learning\rest\RestService.class
 itstep\learning\ioc\IocContextListener.class
 itstep\learning\services\random\RandomService.class

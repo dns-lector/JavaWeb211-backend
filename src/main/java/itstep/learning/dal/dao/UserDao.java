@@ -3,6 +3,7 @@ package itstep.learning.dal.dao;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dto.User;
+import itstep.learning.dal.dto.UserAccess;
 import itstep.learning.models.UserSignupFormModel;
 import itstep.learning.services.db.DbService;
 import itstep.learning.services.kdf.KdfService;
@@ -154,10 +155,10 @@ public class UserDao {
         return user;
     }
     
-    public User authorize( String login, String password ) {
+    public UserAccess authorize( String login, String password ) {
         String sql = 
                 "SELECT * FROM users_access ua " +
-                "JOIN users u ON ua.user_id = u.user_id " +
+               // "JOIN users u ON ua.user_id = u.user_id " +
                 "WHERE ua.login = ?";
         try( PreparedStatement prep = 
                 dbService.getConnection().prepareStatement( sql ) ) {
@@ -166,7 +167,7 @@ public class UserDao {
             if( rs.next() ) {
                 String dk = kdfService.dk( password, rs.getString( "salt" ) ) ;
                 if( Objects.equals( dk, rs.getString( "dk" ) ) ) {
-                    return User.fromResultSet( rs ) ;
+                    return UserAccess.fromResultSet( rs ) ;
                 }
             }
         }        
