@@ -158,6 +158,31 @@ public class UserServlet extends HttpServlet {
                         "update", "PUT /user",
                         "delete", "DELETE /user"
                 ) );
+        // Перевіряємо авторизацію за токеном
+        String authHeader = req.getHeader( "Authorization" );
+        if( authHeader == null ) {
+            restService.sendResponse( resp, 
+                    restResponse.setStatus( 401 )
+                            .setData( "Authorization header required" ) );
+            return;
+        }
+        String authScheme = "Bearer ";
+        if( ! authHeader.startsWith( authScheme ) ) {
+            restService.sendResponse( resp, 
+                    restResponse.setStatus( 401 )
+                            .setData( "Authorization scheme error" ) );
+            return;
+        }        
+        String credentials = authHeader.substring( authScheme.length() ) ;
+        
+        UserAccess userAccess = dataContext.getAccessTokenDao().getUserAccess( credentials );
+        if( userAccess == null ) {
+            restService.sendResponse( resp, 
+                    restResponse.setStatus( 401 )
+                            .setData( "Token expires or invalid" ) );
+            return;
+        }     
+        
         User userUpdates;
         try {
             userUpdates = restService.fromBody( req, User.class ) ;

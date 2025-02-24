@@ -7,6 +7,7 @@ import itstep.learning.dal.dto.User;
 import itstep.learning.dal.dto.UserAccess;
 import itstep.learning.services.db.DbService;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -57,7 +58,30 @@ public class AccessTokenDao {
         return token;
     }
     
-    public UserAccess getUserAccess( AccessToken token ) {
+    public UserAccess getUserAccess( String bearerCredentials ) {
+        UUID accessTokenId;
+        try{ accessTokenId = UUID.fromString( bearerCredentials ) ; }
+        catch( Exception ignore ) { return null ; }
+        
+        String sql = String.format(
+                "SELECT * FROM access_tokens a "
+                        + " JOIN users_access ua ON a.user_access_id = ua.user_access_id "
+                        + " WHERE a.access_token_id = '%s' "
+                        + " AND a.expires_at > CURRENT_TIMESTAMP",
+                accessTokenId.toString() );
+        try( Statement statement = dbService.getConnection().createStatement() ) {
+            ResultSet rs = statement.executeQuery( sql ) ;
+            if( rs.next() ) {
+                return UserAccess.fromResultSet( rs ) ;
+            }
+        }
+        catch( SQLException ex ) {
+            logger.log( 
+                    Level.WARNING, 
+                    "AccessTokenDao::getUserAccess {0} sql: '{1}'",
+                    new Object[] { ex.getMessage(), sql } 
+            );
+        }
         return null;
     }
     
