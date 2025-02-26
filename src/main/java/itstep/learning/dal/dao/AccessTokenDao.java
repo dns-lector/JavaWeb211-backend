@@ -3,15 +3,14 @@ package itstep.learning.dal.dao;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dto.AccessToken;
-import itstep.learning.dal.dto.User;
 import itstep.learning.dal.dto.UserAccess;
+import itstep.learning.services.config.ConfigService;
 import itstep.learning.services.db.DbService;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.util.Date;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -20,22 +19,32 @@ import java.util.logging.Logger;
 @Singleton
 public class AccessTokenDao {
     private final DbService dbService;
-    private final Logger    logger;
+    private final Logger logger;
+    private final ConfigService configService;
+    
+    private int tokenLifetime;
+            
 
     @Inject
-    public AccessTokenDao( DbService dbService, Logger logger) throws SQLException {
+    public AccessTokenDao( DbService dbService, Logger logger, ConfigService configService) throws SQLException {
         this.dbService = dbService;
         this.logger    = logger;
+        this.tokenLifetime = 0; 
+        this.configService = configService;
     }
     
     public AccessToken create( UserAccess userAccess ) {
         if( userAccess == null ) return null ;
+        if( tokenLifetime == 0 ) {
+            tokenLifetime = 1000 * // in milliseconds
+                configService.getValue( "token.lifetime" ).getAsInt();
+        }
         AccessToken token = new AccessToken();
         token.setAccessTokenId( UUID.randomUUID() );
         token.setUserAccessId( userAccess.getUserAccessId() );
         Date date = new Date();
         token.setIssuedAt( date ); 
-        token.setExpiresAt( new Date( date.getTime() + 100*1000 ) ) ;
+        token.setExpiresAt( new Date( date.getTime() + tokenLifetime ) ) ;
         
         String sql = "INSERT INTO access_tokens(access_token_id, user_access_id, "
                 + "issued_at, expires_at) VALUES(?,?,?,?)" ;
@@ -69,6 +78,11 @@ public class AccessTokenDao {
                         + " WHERE a.access_token_id = '%s' "
                         + " AND a.expires_at > CURRENT_TIMESTAMP",
                 accessTokenId.toString() );
+        /*
+        Д.З. Реалізувати подовження терміну дії токена при автентифікації.
+        Якщо у користувача є активний токен, то замість створення нового
+        подовжити термін дії старого і повернути його.
+        */
         try( Statement statement = dbService.getConnection().createStatement() ) {
             ResultSet rs = statement.executeQuery( sql ) ;
             if( rs.next() ) {

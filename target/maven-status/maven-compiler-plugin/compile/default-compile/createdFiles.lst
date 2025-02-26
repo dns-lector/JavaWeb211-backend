@@ -17,6 +17,8 @@ itstep\learning\JakartaRestConfiguration.class
 itstep\learning\models\UserAuthViewModel.class
 itstep\learning\rest\RestService.class
 itstep\learning\ioc\IocContextListener.class
+itstep\learning\services\config\ConfigService.class
+itstep\learning\services\config\JsonConfigService.class
 itstep\learning\services\random\RandomService.class
 itstep\learning\filters\CharsetFilter.class
 itstep\learning\dal\dto\AccessToken.class

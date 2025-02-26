@@ -8,6 +8,7 @@ import itstep.learning.dal.dto.User;
 import itstep.learning.models.UserSignupFormModel;
 import itstep.learning.rest.RestResponse;
 import itstep.learning.rest.RestService;
+import itstep.learning.services.config.ConfigService;
 import itstep.learning.services.db.DbService;
 import itstep.learning.services.kdf.KdfService;
 import itstep.learning.services.random.RandomService;
@@ -18,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 // import oracle.jdbc.pool.OracleDataSource;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Map;
 
@@ -30,14 +30,16 @@ public class HomeServlet extends HttpServlet {
     private final DbService dbService;
     private final DataContext dataContext;
     private final RestService restService;
+    private final ConfigService configService;
     
     @Inject
-    public HomeServlet( RandomService randomService, KdfService kdfService, DbService dbService, itstep.learning.dal.dao.DataContext dataContext, itstep.learning.rest.RestService restService) {
+    public HomeServlet( RandomService randomService, KdfService kdfService, DbService dbService, itstep.learning.dal.dao.DataContext dataContext, itstep.learning.rest.RestService restService, itstep.learning.services.config.ConfigService configService) {
         this.randomService = randomService;
         this.kdfService = kdfService;
         this.dbService = dbService;
         this.dataContext = dataContext;
         this.restService = restService;
+        this.configService = configService;
     }    
 
     @Override
@@ -75,6 +77,7 @@ public class HomeServlet extends HttpServlet {
                 .setStatus( 200 )
                 .setMessage( message + " " + 
                         randomService.randomInt() + " " + 
+                        configService.getValue("db.MySql.port.x").getAsInt() + " " + 
                         msg )
         ); // 20 2c b9 62 ac 59 07 5b 96 4b 07 15 2d 23 4b 70
     }      // 202cb962ac59075b964b07152d234b70
