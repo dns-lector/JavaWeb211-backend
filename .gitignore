@@ -1,3 +1,6 @@
+target/
+appsettings.json
+
 # Compiled class file
 *.class
 
