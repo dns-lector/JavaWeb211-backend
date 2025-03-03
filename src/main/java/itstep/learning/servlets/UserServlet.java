@@ -6,9 +6,11 @@ import itstep.learning.dal.dao.DataContext;
 import itstep.learning.dal.dto.AccessToken;
 import itstep.learning.dal.dto.User;
 import itstep.learning.dal.dto.UserAccess;
+import itstep.learning.models.UserAuthJwtModel;
 import itstep.learning.models.UserAuthViewModel;
 import itstep.learning.rest.RestResponse;
 import itstep.learning.rest.RestService;
+import itstep.learning.services.hash.HashService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,13 +27,15 @@ import java.util.logging.Logger;
 public class UserServlet extends HttpServlet {
     private final DataContext dataContext;
     private final RestService restService;
+    private final HashService hashService;
     private final Logger logger;
 
     @Inject
-    public UserServlet( RestService restService, DataContext dataContext, Logger logger ) {
+    public UserServlet( RestService restService, DataContext dataContext, Logger logger, itstep.learning.services.hash.HashService hashService) {
         this.restService = restService;
         this.dataContext = dataContext;
         this.logger = logger;
+        this.hashService = hashService;
     }
 
     @Override
@@ -89,9 +93,20 @@ public class UserServlet extends HttpServlet {
         AccessToken token = dataContext.getAccessTokenDao().create( userAccess ) ;
         User user =  dataContext.getUserDao().getUserById( userAccess.getUserId() );
         
+        String jwtHeader = new String( Base64.getUrlEncoder().encode(
+                "{\"alg\": \"HS256\", \"typ\": \"JWT\" }".getBytes() ) ) ;
+        String jwtPayload = new String( Base64.getUrlEncoder().encode(
+                restService.gson.toJson( userAccess ).getBytes() ) ) ;
+        String jwtSignature = new String( Base64.getUrlEncoder().encode(
+                hashService.digest( "the secret" + jwtHeader + "." + jwtPayload ).getBytes() ) ) ;
+        String jwtToken = jwtHeader + "." + jwtPayload + "." + jwtSignature;
+        
         restResponse
                 .setStatus( 200 )
-                .setData( new UserAuthViewModel( user, userAccess, token ) )
+                .setData( 
+                        // new UserAuthViewModel( user, userAccess, token )
+                        new UserAuthJwtModel( user, jwtToken )
+                )
                 .setCacheTime( 600 );
         restService.sendResponse( resp, restResponse );
     }
@@ -159,29 +174,14 @@ public class UserServlet extends HttpServlet {
                         "delete", "DELETE /user"
                 ) );
         // Перевіряємо авторизацію за токеном
-        String authHeader = req.getHeader( "Authorization" );
-        if( authHeader == null ) {
-            restService.sendResponse( resp, 
-                    restResponse.setStatus( 401 )
-                            .setData( "Authorization header required" ) );
-            return;
-        }
-        String authScheme = "Bearer ";
-        if( ! authHeader.startsWith( authScheme ) ) {
-            restService.sendResponse( resp, 
-                    restResponse.setStatus( 401 )
-                            .setData( "Authorization scheme error" ) );
-            return;
-        }        
-        String credentials = authHeader.substring( authScheme.length() ) ;
-        
-        UserAccess userAccess = dataContext.getAccessTokenDao().getUserAccess( credentials );
+        UserAccess userAccess = (UserAccess) req.getAttribute( "authUserAccess" );
         if( userAccess == null ) {
             restService.sendResponse( resp, 
-                    restResponse.setStatus( 401 )
-                            .setData( "Token expires or invalid" ) );
+                    restResponse
+                            .setStatus( 401 )
+                            .setData( req.getAttribute( "authStatus" ) ) );
             return;
-        }     
+        }
         
         User userUpdates;
         try {

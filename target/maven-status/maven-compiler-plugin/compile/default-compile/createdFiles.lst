@@ -1,9 +1,11 @@
 itstep\learning\services\db\OracleXeDbService.class
 itstep\learning\models\UserSignupFormModel.class
 itstep\learning\services\random\UtilRandomService.class
+itstep\learning\filters\AuthFilter.class
 itstep\learning\services\hash\HashService.class
 itstep\learning\services\kdf\KdfService.class
 itstep\learning\rest\RestResponse.class
+itstep\learning\filters\AuthJwtFilter.class
 itstep\learning\services\db\DbService.class
 itstep\learning\dal\dao\UserDao.class
 itstep\learning\services\db\MySqlDbService.class
@@ -21,6 +23,7 @@ itstep\learning\services\config\ConfigService.class
 itstep\learning\services\config\JsonConfigService.class
 itstep\learning\services\random\RandomService.class
 itstep\learning\filters\CharsetFilter.class
+itstep\learning\models\UserAuthJwtModel.class
 itstep\learning\dal\dto\AccessToken.class
 itstep\learning\ioc\ServiceConfig.class
 itstep\learning\dal\dto\User.class
