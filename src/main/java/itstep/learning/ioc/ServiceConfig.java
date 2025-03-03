@@ -5,6 +5,8 @@ import itstep.learning.services.config.ConfigService;
 import itstep.learning.services.config.JsonConfigService;
 import itstep.learning.services.db.DbService;
 import itstep.learning.services.db.MySqlDbService;
+import itstep.learning.services.form_parse.FormParseService;
+import itstep.learning.services.form_parse.MixedFormParseService;
 import itstep.learning.services.hash.HashService;
 import itstep.learning.services.hash.Md5HashService;
 import itstep.learning.services.kdf.KdfService;
@@ -22,6 +24,7 @@ public class ServiceConfig extends AbstractModule {
         bind( DbService.class     ).to( MySqlDbService.class    );
         bind( RandomService.class ).to( UtilRandomService.class );
         bind( ConfigService.class ).to( JsonConfigService.class );
+        bind( FormParseService.class ).to( MixedFormParseService.class );
     }
     
 }

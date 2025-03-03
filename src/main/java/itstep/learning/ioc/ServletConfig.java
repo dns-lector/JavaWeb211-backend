@@ -20,6 +20,7 @@ public class ServletConfig extends ServletModule {
         // - додаємо анотацію @Singleton
         serve( "/home" ).with( HomeServlet.class );
         serve( "/user" ).with( UserServlet.class );
+        serve( "/product" ).with( ProductServlet.class );
     }
     
 }
