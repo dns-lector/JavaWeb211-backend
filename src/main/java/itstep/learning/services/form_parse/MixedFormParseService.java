@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.fileupload2.core.DiskFileItemFactory;
 import org.apache.commons.fileupload2.core.FileItem;
-import org.apache.commons.fileupload2.core.FileUploadException;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 
 @Singleton
@@ -36,7 +35,7 @@ public class MixedFormParseService implements FormParseService {
         Map<String, FileItem> files = new HashMap<>();
         
         if( req.getContentType().startsWith( "multipart/form-data" ) ) {
-            List<FileItem> fileItems = uploader.parseRequest(req);
+            List<FileItem> fileItems = uploader.parseRequest( req );
             for( FileItem fileItem : fileItems ) {                
                 if( fileItem.isFormField() ) {
                     fields.put( 
@@ -46,7 +45,7 @@ public class MixedFormParseService implements FormParseService {
                 }
                 else {
                     files.put( 
-                            fileItem.getFieldName(), 
+                            fileItem.getFieldName(),
                             fileItem
                     );
                 }

@@ -17,13 +17,13 @@ public class DiskStorageService implements StorageService {
     public String put( InputStream inputStream, String ext ) throws IOException {
         String itemId = UUID.randomUUID() + ext;
         File file = new File( storagePath + itemId ) ;
-        FileOutputStream writer = new FileOutputStream(file);
-        byte[] buf = new byte[131072];
-        int len;
-        while( ( len = inputStream.read(buf) ) > 0 ) {
-            writer.write( buf, 0, len );
+        try( FileOutputStream writer = new FileOutputStream(file) ) {
+            byte[] buf = new byte[131072];
+            int len;
+            while( ( len = inputStream.read(buf) ) > 0 ) {
+                writer.write( buf, 0, len );
+            }
         }
-        writer.close();
         return itemId;
     }
 

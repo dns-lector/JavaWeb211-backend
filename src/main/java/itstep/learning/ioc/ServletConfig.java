@@ -18,9 +18,10 @@ public class ServletConfig extends ServletModule {
         // !! Для усіх сервлетів у проєкті
         // - прибираємо анотацію @WebServlet
         // - додаємо анотацію @Singleton
-        serve( "/home" ).with( HomeServlet.class );
-        serve( "/user" ).with( UserServlet.class );
-        serve( "/product" ).with( ProductServlet.class );
+        serve( "/home"      ).with( HomeServlet.class    );
+        serve( "/user"      ).with( UserServlet.class    );
+        serve( "/product"   ).with( ProductServlet.class );
+        serve( "/storage/*" ).with( StorageServlet.class );
     }
     
 }

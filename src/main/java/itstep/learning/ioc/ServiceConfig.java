@@ -13,18 +13,21 @@ import itstep.learning.services.kdf.KdfService;
 import itstep.learning.services.kdf.PbKdf1Service;
 import itstep.learning.services.random.RandomService;
 import itstep.learning.services.random.UtilRandomService;
+import itstep.learning.services.storage.DiskStorageService;
+import itstep.learning.services.storage.StorageService;
 
 
 public class ServiceConfig extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind( HashService.class   ).to( Md5HashService.class    );
-        bind( KdfService.class    ).to( PbKdf1Service.class     );
-        bind( DbService.class     ).to( MySqlDbService.class    );
-        bind( RandomService.class ).to( UtilRandomService.class );
-        bind( ConfigService.class ).to( JsonConfigService.class );
+        bind( HashService.class      ).to( Md5HashService.class        );
+        bind( KdfService.class       ).to( PbKdf1Service.class         );
+        bind( DbService.class        ).to( MySqlDbService.class        );
+        bind( RandomService.class    ).to( UtilRandomService.class     );
+        bind( ConfigService.class    ).to( JsonConfigService.class     );
         bind( FormParseService.class ).to( MixedFormParseService.class );
+        bind( StorageService.class   ).to( DiskStorageService.class    );
     }
     
 }
