@@ -69,6 +69,8 @@ public class HomeServlet extends HttpServlet {
         String msg = 
                 dataContext.getUserDao().installTables()
                 && dataContext.getAccessTokenDao().installTables()
+                && dataContext.getProductDao().installTables()
+                // && dataContext.getCategoryDao().seedData()
                     ? "Install OK"
                     : "Install Fail";
         
@@ -77,7 +79,7 @@ public class HomeServlet extends HttpServlet {
                 .setStatus( 200 )
                 .setMessage( message + " " + 
                         randomService.randomInt() + " " + 
-                        configService.getValue("db.MySql.port.x").getAsInt() + " " + 
+                        configService.getValue("db.MySql.port").getAsInt() + " " + 
                         msg )
         ); // 20 2c b9 62 ac 59 07 5b 96 4b 07 15 2d 23 4b 70
     }      // 202cb962ac59075b964b07152d234b70

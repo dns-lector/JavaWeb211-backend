@@ -24,7 +24,9 @@ public class StorageServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String fileId = req.getPathInfo().substring(1);
         try( InputStream inputStream = storageService.get( fileId ) ) {
-            resp.setContentType( "image/png" );
+            int dotPosition = fileId.lastIndexOf( '.' );
+            String ext = fileId.substring( dotPosition ) ;
+            resp.setContentType( mimeByExtension( ext ) );
             OutputStream writer = resp.getOutputStream();
             byte[] buf = new byte[131072];
             int len;
@@ -35,8 +37,38 @@ public class StorageServlet extends HttpServlet {
         catch( IOException ex ) {
             resp.setStatus( 404 );
         }
+        /*
+        Д.З. провести валідацію fileId, що одержується з шляху запиту:
+         - не порожній
+         - містить точку 
+         - розширення після точки 
+          = не порожне
+          = не належить до "чорного" переліку: .exe, .php, .py, .cgi, ...
+        За наявності помилок видавати статус 400 або 404
+        * Доповнити mimeByExtension найбільш поширеними розширеннями файлів
+        */
     }
-        
+    
+    private String mimeByExtension( String ext ) {
+        switch( ext ) {
+            case ".jpg" : ext = ".jpeg" ;
+            case ".jpeg":
+            case ".png" :
+            case ".gif" :
+            case ".webp":
+            case ".bmp" : return "image/" + ext.substring(1);
+            
+            case ".txt" : ext = ".plain" ;
+            case ".css" :
+            case ".csv" :
+            case ".html": return "text/" + ext.substring(1);
+            
+            case ".js"  :
+            case ".mjs" : return "text/javascript";
+            
+            default: return "application/octet-stream";            
+        }
+    }
 }
 /*
 http://localhost:8080/Java-Web-221/storage/123?x=10&y=20
