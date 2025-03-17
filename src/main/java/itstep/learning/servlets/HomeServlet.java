@@ -69,7 +69,7 @@ public class HomeServlet extends HttpServlet {
         String msg = 
                 dataContext.getUserDao().installTables()
                 && dataContext.getAccessTokenDao().installTables()
-                && dataContext.getProductDao().installTables()
+                && dataContext.getCartDao().installTables()
                 // && dataContext.getCategoryDao().seedData()
                     ? "Install OK"
                     : "Install Fail";

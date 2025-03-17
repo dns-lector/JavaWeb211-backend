@@ -3,6 +3,7 @@ package itstep.learning.dal.dto;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class Category {
@@ -12,6 +13,8 @@ public class Category {
     private String categoryDescription;
     private String categoryImageId;
     private Date   deleteMoment;
+    
+    private List<Product> products;
 
     public static Category fromResultSet( ResultSet rs ) throws SQLException {
         Category category = new Category() ;
@@ -32,6 +35,14 @@ public class Category {
 
     public void setCategoryId(UUID categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 
     public String getCategorySlug() {

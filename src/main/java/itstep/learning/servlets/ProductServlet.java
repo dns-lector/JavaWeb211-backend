@@ -3,6 +3,7 @@ package itstep.learning.servlets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dao.DataContext;
+import itstep.learning.dal.dto.Category;
 import itstep.learning.dal.dto.Product;
 import itstep.learning.models.UserAuthJwtModel;
 import itstep.learning.rest.RestResponse;
@@ -15,6 +16,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.fileupload2.core.FileItem;
@@ -143,6 +146,11 @@ public class ProductServlet extends HttpServlet {
     }
     
     private void getCategories(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String imgPath = getStoragePath( req );
+        List<Category> categories = dataContext.getCategoryDao().getList();
+        for( Category c : categories ) {
+            c.setCategoryImageId( imgPath + c.getCategoryImageId() );
+        }
         restService.sendResponse( resp, 
             new RestResponse()
                 .setResourceUrl( "GET /product?type=categories" )
@@ -151,17 +159,59 @@ public class ProductServlet extends HttpServlet {
                 ) )
                 .setStatus( 200 )
                 .setCacheTime( 86400 )
-                .setData( dataContext.getCategoryDao().getList() ) 
-        );
+                .setData( categories ) ) ; 
     }
     
     private void getCategory(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        
+        String slug = req.getParameter( "slug" );
+        RestResponse restResponse = new RestResponse()
+                .setResourceUrl( "GET /product?type=category&slug=" + slug )
+                .setMeta( Map.of(
+                        "dataType", "object"
+                ) )
+                .setCacheTime( 86400 ) ;
+        Category category;
+        try { category = dataContext.getCategoryDao().getCategoryBySlug( slug ) ; }
+        catch( RuntimeException ignore ) {
+            restService.sendResponse( resp, restResponse
+                .setStatus( 500 )
+                .setData( "Take a look to the Logs" ) ) ;
+            return;
+        }
+        if( category == null ) {
+            restService.sendResponse( resp, restResponse
+                .setStatus( 404 )
+                .setData( "Category not found" ) ) ;
+            return;
+        }
+        String imgPath = getStoragePath( req );
+        category.setCategoryImageId( imgPath + category.getCategoryImageId() );
+        for( Product p : category.getProducts() ) {
+            p.setProductImageId( imgPath + p.getProductImageId() );
+        }
+        restService.sendResponse( resp, restResponse
+                .setStatus( 200 )
+                .setData( category ) ) ;
     }
+    
     private void getProducts(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         
     }
     
+    private String getStoragePath( HttpServletRequest req ) {
+        return String.format( Locale.ROOT, 
+                "%s://%s:%d%s/storage/",
+                req.getScheme(),
+                req.getServerName(),
+                req.getServerPort(),
+                req.getContextPath()
+        );
+    }
+    
+    @Override
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        restService.setCorsHeaders( resp );
+    }
 }
 /*
 Д.З. Оформити сторінку додавання нового продукту

@@ -79,4 +79,8 @@ req.getServletPath()  /storage
 req.getPathInfo()     /123
 req.getQueryString()  x=10&y=20
 
+req.getServerName()   localhost
+req.getScheme()       http
+req.getServerPort()   8080
+
 */

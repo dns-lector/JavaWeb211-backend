@@ -105,7 +105,10 @@ public class UserServlet extends HttpServlet {
                 .setStatus( 200 )
                 .setData( 
                         // new UserAuthViewModel( user, userAccess, token )
-                        new UserAuthJwtModel( user, jwtToken )
+                        new UserAuthJwtModel( user, jwtToken, 
+                                dataContext
+                                .getCartDao()
+                                .getUserCart( userAccess.getUserAccessId(), false ) )
                 )
                 .setCacheTime( 600 );
         restService.sendResponse( resp, restResponse );
