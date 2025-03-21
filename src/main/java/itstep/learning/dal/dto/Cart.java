@@ -2,7 +2,9 @@ package itstep.learning.dal.dto;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class Cart {    
@@ -12,6 +14,8 @@ public class Cart {
     private double cartPrice;
     private Date   cartCreatedAt;
     private Date   cartClosedAt;
+    
+    private List<CartItem> cartItems;
     
     public static Cart fromResultSet( ResultSet rs ) throws SQLException {
         Cart cart = new Cart() ;
@@ -24,8 +28,24 @@ public class Cart {
                 timestamp == null ? null : new Date( timestamp.getTime() ) ) ;
         cart.setCartPrice( rs.getDouble( "cart_price" ) );
         cart.setIsCartCancelled( rs.getByte( "cart_is_cancelled" ) );
+        CartItem cartItem = null;
+        try { cartItem = CartItem.fromResultSet( rs ); }
+        catch( Exception ignored ) {}
+        if( cartItem != null ) {
+            cart.cartItems = new ArrayList<>();
+            cart.cartItems.add( cartItem );
+            while( rs.next() ) {
+                cart.cartItems.add( CartItem.fromResultSet( rs ) );
+            }
+        }
         return cart;
     }
+
+    public List<CartItem> getCartItems() {
+        return cartItems;
+    }
+    
+    
 
     public UUID getCartId() {
         return cartId;

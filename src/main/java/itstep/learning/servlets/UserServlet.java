@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dao.DataContext;
 import itstep.learning.dal.dto.AccessToken;
+import itstep.learning.dal.dto.Cart;
 import itstep.learning.dal.dto.User;
 import itstep.learning.dal.dto.UserAccess;
 import itstep.learning.models.UserAuthJwtModel;
@@ -101,14 +102,20 @@ public class UserServlet extends HttpServlet {
                 hashService.digest( "the secret" + jwtHeader + "." + jwtPayload ).getBytes() ) ) ;
         String jwtToken = jwtHeader + "." + jwtPayload + "." + jwtSignature;
         
+        Cart activeCart = dataContext
+                    .getCartDao()
+                    .getUserCart( userAccess.getUserAccessId(), false );
+        
+        if( activeCart != null ) {
+            activeCart = dataContext
+                    .getCartDao()
+                    .getCart( activeCart.getCartId() );
+        }
+        
         restResponse
                 .setStatus( 200 )
                 .setData( 
-                        // new UserAuthViewModel( user, userAccess, token )
-                        new UserAuthJwtModel( user, jwtToken, 
-                                dataContext
-                                .getCartDao()
-                                .getUserCart( userAccess.getUserAccessId(), false ) )
+                        new UserAuthJwtModel( user, jwtToken, activeCart )
                 )
                 .setCacheTime( 600 );
         restService.sendResponse( resp, restResponse );
@@ -237,3 +244,10 @@ public class UserServlet extends HttpServlet {
         restService.setCorsHeaders( resp );
     }
 }
+/*
+Д.З. Прикласти посилання на репозиторій або архів підсумкового проєкту
+Додати до нього скріншоти/відеозаписи результатів роботи.
+
+Встановити Android Studio https://developer.android.com/studio
+Запустити, продовжити установку (емулятор, SDK,...)
+*/

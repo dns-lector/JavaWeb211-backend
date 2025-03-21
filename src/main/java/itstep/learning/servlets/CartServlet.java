@@ -65,9 +65,12 @@ public class CartServlet extends HttpServlet {
         
         Cart cart = dataContext.getCartDao().getUserCart( userAccess.getUserAccessId(), true ) ;
         if( dataContext.getCartDao().addToCart( cart, product ) ) {
+            // Оновлюємо вміст кошика та його вартість
+            cart = dataContext.getCartDao().getCart( cart.getCartId() );
+            // Передаємо оновлені дані до відповіді
             restService.sendResponse( resp, 
                     restResponse.setStatus( 202 )
-                    .setData( "Accepted" ) );
+                    .setData( cart ) ) ;
         }
         else {
             restService.sendResponse( resp, 
