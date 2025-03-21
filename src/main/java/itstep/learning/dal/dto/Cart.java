@@ -16,7 +16,7 @@ public class Cart {
     public static Cart fromResultSet( ResultSet rs ) throws SQLException {
         Cart cart = new Cart() ;
         cart.setCartId( UUID.fromString( rs.getString( "cart_id" ) ) );
-        cart.setUserAccessId( UUID.fromString( rs.getString( "product_id" ) ) );
+        cart.setUserAccessId( UUID.fromString( rs.getString( "user_access_id" ) ) );
         java.sql.Timestamp timestamp = rs.getTimestamp( "cart_created_at" ) ;        
         cart.setCartCreatedAt( new Date( timestamp.getTime() ) ) ;
         timestamp = rs.getTimestamp( "cart_closed_at" ) ;

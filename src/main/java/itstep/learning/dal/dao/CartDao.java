@@ -3,7 +3,10 @@ package itstep.learning.dal.dao;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dto.Cart;
+import itstep.learning.dal.dto.CartItem;
+import itstep.learning.dal.dto.Product;
 import itstep.learning.services.db.DbService;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -28,6 +31,66 @@ public class CartDao {
     public CartDao( DbService dbService, Logger logger ) throws SQLException {
         this.dbService = dbService;
         this.logger    = logger;
+    }
+    
+    public boolean addToCart( Cart cart, Product product ) {
+        // Якщо у кошику немає такого товару - створюємо cartItem та додаємо
+        // Якщо є - збільшуємо кількість та зберігаємо      
+        
+        // Також оновлюємо загальну вартість кошика
+        
+        CartItem cartItem;
+        boolean isNew;
+        String sql = "SELECT * FROM cart_items ci WHERE ci.cart_id = ? AND ci.product_id = ?";
+        try( PreparedStatement prep = dbService.getConnection().prepareStatement(sql) ) {
+            prep.setString( 1, cart.getCartId().toString() );
+            prep.setString( 2, product.getProductId().toString() );
+            ResultSet rs = prep.executeQuery();
+            if( rs.next() ) {
+                cartItem = CartItem.fromResultSet( rs );
+                cartItem.setQuantity((short) (cartItem.getQuantity() + 1));
+                cartItem.setCartItemPrice( cartItem.getCartItemPrice() + product.getPrice() );
+                isNew = false;
+            }
+            else {
+                cartItem = new CartItem();
+                cartItem.setCartItemId( UUID.randomUUID() );
+                cartItem.setCartId( cart.getCartId() );
+                cartItem.setProductId( product.getProductId() );
+                cartItem.setQuantity( (short)1 );
+                cartItem.setCartItemPrice( product.getPrice() ) ;
+                isNew = true;
+            }
+        }
+        catch( SQLException ex ) {
+            logger.log( 
+                    Level.WARNING, 
+                    "CartDao::addToCart {0} sql: {1}",
+                    new Object[] { ex.getMessage(), sql } 
+            );
+            return false;
+        }
+        sql = isNew
+                ? "INSERT INTO cart_items(cart_id, product_id, quantity, cart_item_price, cart_item_id ) VALUES(?,?,?,?,?)"
+                : "UPDATE cart_items SET cart_id = ?, product_id = ?, quantity = ?, cart_item_price = ?  WHERE cart_item_id = ?";
+        try( PreparedStatement prep = dbService.getConnection().prepareStatement(sql) ) {
+            prep.setString( 1, cartItem.getCartId().toString() );
+            prep.setString( 2, product.getProductId().toString() );
+            prep.setShort(  3, cartItem.getQuantity() );
+            prep.setDouble( 4, cartItem.getCartItemPrice() );
+            prep.setString( 5, cartItem.getCartItemId().toString() );
+            prep.executeUpdate();
+            dbService.getConnection().commit();
+        }
+        catch( SQLException ex ) {
+            logger.log( 
+                    Level.WARNING, 
+                    "CartDao::addToCart {0} sql: {1}",
+                    new Object[] { ex.getMessage(), sql } 
+            );
+            return false;
+        }
+        return true;
     }
     
     public Cart getUserCart( UUID userAccessId, boolean createNew ) {
@@ -133,3 +196,6 @@ public class CartDao {
         return false;    
     }
 }
+/*
+
+*/

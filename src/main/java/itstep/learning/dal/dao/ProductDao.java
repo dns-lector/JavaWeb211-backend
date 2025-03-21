@@ -5,6 +5,7 @@ import com.google.inject.Singleton;
 import itstep.learning.dal.dto.Product;
 import itstep.learning.services.db.DbService;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -21,6 +22,25 @@ public class ProductDao {
     public ProductDao( DbService dbService, Logger logger ) throws SQLException {
         this.dbService = dbService;
         this.logger    = logger;
+    }
+    
+    public Product getProductById( UUID productId ) {
+        String sql = "SELECT * FROM products p WHERE p.product_id = ?";
+        try( PreparedStatement prep = dbService.getConnection().prepareStatement(sql) ) {
+            prep.setString( 1, productId.toString() );
+            ResultSet rs = prep.executeQuery();
+            if( rs.next() ) {               
+                return Product.fromResultSet( rs );
+            }
+        }
+        catch( SQLException ex ) {
+            logger.log( 
+                    Level.WARNING, 
+                    "ProductDao::getProductById {0} sql: {1}",
+                    new Object[] { ex.getMessage(), sql } 
+            );
+        }
+        return null;
     }
     
     public Product addNewProduct( Product product ) {
